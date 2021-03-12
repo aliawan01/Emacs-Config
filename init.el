@@ -1,3 +1,4 @@
+(setq debug-on-error t)
 (set-default-coding-systems 'utf-8)
 (set-face-attribute 'default nil :font "Fira Code" :height 140)
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
@@ -55,44 +56,70 @@
 (unless (boundp 'package-pinned-packages)
   (defvar package-pinned-packages '()))
 
+;; Installing General
+
+(use-package general)
+
 ;; Installing Swiper
 
 (use-package swiper
   :ensure t)
-;; Installing diminish
+
+;; Installing Diminish
 
 (use-package diminish)
+
+;; Installing Evil Mode
+
+(use-package evil
+  :config (evil-mode 1))
 
 ;; Setting up ivy
 
 (use-package ivy
+  :after (general evil)
   :diminish
-  :bind (("C-s" . swiper)
-         :map ivy-minibuffer-map
-         ("TAB" . ivy-alt-done)	
-         ("C-l" . ivy-alt-done)
-         ("C-j" . ivy-next-line)
-         ("C-k" . ivy-previous-line)
-         :map ivy-switch-buffer-map
-         ("C-k" . ivy-previous-line)
-         ("C-l" . ivy-done)
-         ("C-d" . ivy-switch-buffer-kill)
-         :map ivy-reverse-i-search-map
-         ("C-k" . ivy-previous-line)
-         ("C-d" . ivy-reverse-i-search-kill))
+  :init
+  (general-override-mode)
+  (general-define-key 
+   :states 'normal
+
+   :keymaps 'override
+   "C-s" 'swiper
+
+   :keymaps 'ivy-minibuffer-map
+    "TAB"  'ivy-alt-done	
+    "C-l"  'ivy-alt-done
+    "C-j"  'ivy-next-line
+    "C-k"  'ivy-previous-line
+
+   :keymaps 'ivy-switch-buffer-map
+    "C-k"  'ivy-previous-line
+    "C-l"  'ivy-done
+    "C-d"  'ivy-switch-buffer-kill
   
+   :keymaps 'ivy-reverse-i-search-map 
+    "C-k"  'ivy-previous-line
+    "C-d"  'ivy-reverse-i-search-kill)
+
   :config
   (setq ivy-initial-inputs-alist nil)
   (ivy-mode 1))
 
 (use-package counsel
   :ensure t
-  :bind (("M-x" . counsel-M-x)
-         ("C-p" . counsel-ibuffer)
-         ("C-f" . counsel-find-file)
-         ("C-M-v" . counsel-imenu)
-         :map minibuffer-local-map
-         ("C-r" . 'counsel-minibuffer-history)))
+  :after general
+  :init
+  (general-override-mode)
+  (general-define-key
+   :states 'normal
+   :keymaps 'override
+   "M-x"  'counsel-M-x
+   "C-p"  'counsel-ibuffer
+   "C-f"  'counsel-find-file
+   "C-M-v"  'counsel-imenu
+   :keymaps 'minibuffer-local-map
+    "C-r"  'counsel-minibuffer-history))
 
 ;; Making ivy look fancy
 
@@ -105,10 +132,12 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages '(diminish use-package ivy-rich counsel)))
+ '(package-selected-packages '(evil general diminish use-package ivy-rich counsel)))
+
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+
  )
