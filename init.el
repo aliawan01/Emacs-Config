@@ -1,3 +1,4 @@
+(defvar ido-cur-item nil)
 (defvar ido-cur-list nil)
 (defun ali/initial-setup ()
     "Basic Settings to make emacs useable"
@@ -42,23 +43,16 @@
 
   ;; Getting rid of the annoying curly arrows at the end of folded lines and making the colour of the fringes the same colour as the background
   (setq-default fringe-indicator-alist '(continuation nil nil))
-  (set-face-attribute 'fringe nil :background nil)
+  (set-face-attribute 'fringe nil :background "#fcfcc2")
 
-  (set-face-attribute 'default nil :font "Courier New" :height 120)
-  ;; (set-background-color "#ffffd8")
-  ;; (set-foreground-color "black")
-  ;;(set-face-attribute 'font-lock-builtin-face nil :foreground "#DAB98F")
-  ;;(set-face-attribute 'font-lock-comment-face nil :foreground "gray50")
-  ;;(set-face-attribute 'font-lock-constant-face nil :foreground "burlywood3")
-  ;;(set-face-attribute 'font-lock-doc-face nil :foreground "gray50")
-  ;;(set-face-attribute 'font-lock-function-name-face nil :foreground "#c76f4a")
-  ;;(set-face-attribute 'font-lock-keyword-face nil :foreground "DarkGoldenrod3")
-  ;;(set-face-attribute 'font-lock-string-face nil :foreground "olive drab")
-  ;;(set-face-attribute 'font-lock-type-face nil :foreground "DarkGoldenrod3")
-  ;;(set-face-attribute 'font-lock-variable-name-face nil :foreground "burlywood3")
-  ;;(set-foreground-color "burlywood3")
-  ;;(set-background-color "#161616")
-  ;;(set-cursor-color "#40FF40")
+  ;; Setting font
+  (set-face-attribute 'default nil :font "Source Code Pro" :height 130)
+
+  ;; Colorscheme
+  (load-theme 'tsdh-light 1)
+  (set-foreground-color "black")
+  (set-background-color "#fcfcc2")
+  (set-face-attribute 'font-lock-variable-name-face nil :foreground "black")
 
   (make-face 'font-lock-todo-face)
   (make-face 'font-lock-note-face)
@@ -70,8 +64,8 @@
         ("\\<\\(NOTE\\)" 1 'font-lock-note-face t))))
  	'(c++-mode c-mode python-mode emacs-lisp-mode))
 
-  (modify-face 'font-lock-todo-face "Red" nil nil t)
-  (modify-face 'font-lock-note-face "chartreuse" nil nil t)
+  (modify-face 'font-lock-todo-face "Red" nil nil t nil t)
+  (modify-face 'font-lock-note-face "medium sea green" nil nil t nil t)
 
 )
 
@@ -171,24 +165,24 @@
   (package-refresh-contents))
 
 ;; Making sure that all the packages are installed
-(setq package-selected-packages '(evil highlight-numbers undo-tree))
+;;(setq package-selected-packages '(evil highlight-numbers undo-tree))
+(setq package-selected-packages '(use-package))
 (package-install-selected-packages)
+
+(require 'use-package)
+(use-package evil
+  :ensure t)
+(use-package highlight-numbers
+  :ensure t)
+(use-package undo-tree
+  :ensure t)
+(use-package smex
+  :ensure t)
 
 (defun ali/ido () 
   (interactive)
   (require 'ido)
   (setq ido-create-new-buffer 'always)
-
-  ;; Making ido-mode work in M-x
-  (global-set-key (kbd "M-x") (lambda() 
-  (interactive)
-  (let ((enable-recursive-minibuffers t))
-      (call-interactively
-      (intern
-      (ido-completing-read
-      "M-x "
-      (all-completions "" obarray 'commandp)))))))
-
   (ido-everywhere t)
   (ido-mode 1))
 
@@ -227,9 +221,7 @@
             (setq end (line-end-position))
             (indent-rigidly start end 4)
             (setq deactivate-mark nil)
-            ))
-)
-
+            )))
 
 (defun ali/evil ()
   "Setup for evil mode"
@@ -241,6 +233,9 @@
   (setq evil-insert-state-cursor 'box)
 
   (define-key evil-normal-state-map (kbd "C-b c") 'projects)
+
+  ;; Making backspace launch M-x
+  (define-key evil-normal-state-map (kbd "DEL") 'smex)
 
   ;; Balancing all the windows on the screen
   (define-key evil-normal-state-map (kbd "=") 'balance-windows)
@@ -256,10 +251,7 @@
   (define-key evil-normal-state-map (kbd "C-q") 'run-compile)
 
   ;; Making TAB autocomplete
-  (define-key evil-insert-state-map [tab] 'evil-complete-next)
-
-  ;; Making Shift-Tab indent current line
-  (define-key evil-insert-state-map [backtab] 'indent-current-line)
+  (define-key evil-insert-state-map [tab] 'indent-current-line)
 
   (evil-make-overriding-map ali-keymap 'normal 'motion)
   (evil-mode 1))
@@ -294,7 +286,7 @@
 
 (defun projects ()
   (interactive)
-    (switch-to-buffer (find-file-noselect "C:\\Dev\\LearningC++\\main.cpp"))
+    (switch-to-buffer (find-file-noselect "Name of folder"))
 )
 
 (defun build-compile ()
