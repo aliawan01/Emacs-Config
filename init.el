@@ -1,30 +1,30 @@
 (defvar ido-cur-item nil)
 (defvar ido-cur-list nil)
+
 (defun ali/initial-setup ()
-    "Basic Settings to make emacs useable"
-    (interactive)
-    (setq inhibit-startup-message t) 
-    (blink-cursor-mode -1)
-    (tool-bar-mode -1)
-    (menu-bar-mode -1)
-    (scroll-bar-mode -1)
-    (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
-    (setq mouse-wheel-progressive-speed nil)
-    (setq mouse-wheel-follow-mouse 't)
-    (setq scroll-step 3)
-    (setq scroll-margin 3)
-    (setq-default indent-tabs-mode nil)
-    (setq debug-on-error t)
-    (setq ring-bell-function 'ignore) 
-    (add-hook 'prog-mode-hook 'highlight-numbers-mode)
+  "Basic Settings to make emacs useable"
+  (interactive)
+  (setq inhibit-startup-message t) 
+  (blink-cursor-mode -1)
+  (tool-bar-mode -1)
+  (menu-bar-mode -1)
+  (scroll-bar-mode -1)
+  (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
+  (setq mouse-wheel-progressive-speed nil)
+  (setq mouse-wheel-follow-mouse 't)
+  (setq scroll-step 3)
+  (setq scroll-margin 3)
+  (setq-default indent-tabs-mode nil)
+  (setq debug-on-error t)
+  (setq ring-bell-function 'ignore) 
+  (add-hook 'prog-mode-hook 'highlight-numbers-mode)
 
-    ;; Setting ESC to quit 
-    (define-key key-translation-map (kbd "ESC") (kbd "C-g"))
+  ;; Setting ESC to quit 
+  (define-key key-translation-map (kbd "ESC") (kbd "C-g"))
 
-    ;; Making the line numbers wider
-    (add-hook 'display-line-numbers-mode-hook '(lambda() (setq display-line-numbers-width 3)))
+  ;; Making the line numbers wider
+  (add-hook 'display-line-numbers-mode-hook '(lambda() (setq display-line-numbers-width 3)))
      
-
   ;; Getting rid of autosave files and other stuff
   (setq make-lockfiles nil
         make-backup-files nil
@@ -43,16 +43,16 @@
 
   ;; Getting rid of the annoying curly arrows at the end of folded lines and making the colour of the fringes the same colour as the background
   (setq-default fringe-indicator-alist '(continuation nil nil))
-  (set-face-attribute 'fringe nil :background "#fcfcc2")
 
   ;; Setting font
-  (set-face-attribute 'default nil :font "Source Code Pro" :height 130)
+  (set-face-attribute 'default nil :font "Consolas" :height 130)
 
   ;; Colorscheme
   (load-theme 'tsdh-light 1)
-  (set-foreground-color "black")
-  (set-background-color "#fcfcc2")
-  (set-face-attribute 'font-lock-variable-name-face nil :foreground "black")
+
+  ;; Extra font settings
+  (set-background-color "honeydew")
+  (set-face-attribute 'fringe nil :background "honeydew")
 
   (make-face 'font-lock-todo-face)
   (make-face 'font-lock-note-face)
@@ -66,7 +66,6 @@
 
   (modify-face 'font-lock-todo-face "Red" nil nil t nil t)
   (modify-face 'font-lock-note-face "medium sea green" nil nil t nil t)
-
 )
 
 ;; Setting up indentation for C/C++ files
@@ -140,7 +139,6 @@
                                (define-key eshell-mode-map (kbd "C-f") 'ido-find-file)
                                ))
 
-
 (defun ali/brackets () 
   "Automatically completing brackets and pairs"
   (interactive)
@@ -165,11 +163,11 @@
   (package-refresh-contents))
 
 ;; Making sure that all the packages are installed
-;;(setq package-selected-packages '(evil highlight-numbers undo-tree))
 (setq package-selected-packages '(use-package))
 (package-install-selected-packages)
 
 (require 'use-package)
+
 (use-package evil
   :ensure t)
 (use-package highlight-numbers
@@ -178,32 +176,35 @@
   :ensure t)
 (use-package smex
   :ensure t)
+(use-package ido-vertical-mode
+ :ensure t)
 
 (defun ali/ido () 
   (interactive)
   (require 'ido)
   (setq ido-create-new-buffer 'always)
   (ido-everywhere t)
-  (ido-mode 1))
+  (ido-mode 1)
+  (ido-vertical-mode 1))
 
-(defun ido-keybindings ()
+(defun ali/ido-keybindings ()
   "Ido keybindings"
   (interactive)
 
-  (set-transient-map ido-completion-map t)
-  (let ((enable-recursive-minibuffers t)
-        (minibuffer-depth-indicate-mode 10))
-        (define-key ido-completion-map (kbd "C-l") 'ido-next-match)
-        (define-key ido-completion-map (kbd "M-d") 'ido-enter-dired)
-        (define-key ido-completion-map (kbd "M-f") 'ido-find-file-other-window)
-        (define-key ido-completion-map (kbd "C-h") 'ido-prev-match)))
+  (let ((keymaps (list ido-completion-map)))
+    (dolist (keymap keymaps)
+		 (define-key keymap (kbd "C-j") 'ido-next-match)
+		 (define-key keymap (kbd "C-k") 'ido-prev-match)))
 
-(add-hook 'ido-setup-hook 'ido-keybindings)
+  (define-key ido-completion-map (kbd "M-d") 'ido-enter-dired)
+  (define-key ido-completion-map (kbd "M-f") 'ido-find-file-other-window))
 
+(add-hook 'ido-setup-hook 'ali/ido-keybindings)
 
 ;; Settings for increasing and decreasing size of the image when in the `image-mode'
 (define-key image-map (kbd "C-=") 'image-increase-size)
 (define-key image-map (kbd "C--") 'image-decrease-size)
+
 (defun indent-current-line ()
   (interactive)
     (progn 
@@ -226,11 +227,11 @@
 (defun ali/evil ()
   "Setup for evil mode"
   (interactive)
-
   (require 'evil)
 
   ;; Making cursor always be a box
-  (setq evil-insert-state-cursor 'box)
+  (setq evil-normal-state-cursor 'box)
+  (setq evil-insert-state-cursor '(bar . 2))
 
   (define-key evil-normal-state-map (kbd "C-b c") 'projects)
 
@@ -253,9 +254,16 @@
   ;; Making TAB autocomplete
   (define-key evil-insert-state-map [tab] 'indent-current-line)
 
+  ;; Commands to navigate through windows
+  (let ((keymaps (list evil-normal-state-map evil-insert-state-map)))
+    (dolist (keymap keymaps)
+      (define-key keymap (kbd "C-h") 'evil-window-left)
+      (define-key keymap (kbd "C-j") 'evil-window-down)
+      (define-key keymap (kbd "C-k") 'evil-window-up)
+      (define-key keymap (kbd "C-l") 'evil-window-right)))
+
   (evil-make-overriding-map ali-keymap 'normal 'motion)
   (evil-mode 1))
-
 
 (defun ali/undo-tree ()
   (interactive)
@@ -264,7 +272,6 @@
   (global-undo-tree-mode 1)
   (evil-set-undo-system 'undo-tree)
 )
-
 
 (defun ali/compile-python ()
     (interactive)
@@ -276,18 +283,9 @@
         (select-window (get-buffer-window "*compilation*"))
         (evil-window-set-width 65))))
 
-(defun ali/find-missing-closing-paranthesis ()
-  (interactive)
-  (backward-up-list -1))
-
-(defun ali/find-missing-open-paranthesis ()
-  (interactive)
-  (backward-up-list))
-
 (defun projects ()
   (interactive)
-    (switch-to-buffer (find-file-noselect "Name of folder"))
-)
+  (switch-to-buffer (find-file-noselect "Name of folder")))
 
 (defun build-compile ()
   (interactive)
@@ -303,73 +301,61 @@
 (add-hook 'makefile-mode-hook '(lambda () (interactive) (setq indent-tabs-mode t)))
 
 (let ((ali-keymap (make-sparse-keymap)))
-    "Evil keybindings for navigating through windows"
-    (define-key ali-keymap (kbd "C-h") 'evil-window-left)
-    (define-key ali-keymap (kbd "C-j") 'evil-window-down)
-    (define-key ali-keymap (kbd "C-k") 'evil-window-up)
-    (define-key ali-keymap (kbd "C-l") 'evil-window-right)
-
-    "M-d to open dired in the current directory"
+    ;; M-d to open dired in the current directory
     (global-set-key (kbd "M-d") '(lambda() (interactive) (execute-kbd-macro (read-kbd-macro "C-x d RET"))))
 
-    "Keybindings for ido-mode"
+    ;; Keybindings for ido-mode
     (define-key ali-keymap (kbd "C-p") 'ido-switch-buffer)
     (define-key ali-keymap (kbd "C-f") 'ido-find-file)
 
-    "Making windows bigger and smaller"
+    ;; Making windows bigger and smaller
     (define-key ali-keymap (kbd "M-=") 'enlarge-window-horizontally)
     (define-key ali-keymap (kbd "M--") 'shrink-window-horizontally)
 
-    "Making Fonts Bigger and Smaller"
+    ;; Making Fonts Bigger and Smaller
     (global-set-key (kbd "C-=") 'text-scale-increase)
     (global-set-key (kbd "C--") 'text-scale-decrease)
 
-    "Comments"
+    ;; Comments
     (define-key ali-keymap (kbd "C-/") 'comment-line)
 
-    "Making Line numbers toggable"
+    ;; Making Line numbers toggable
     (define-key ali-keymap (kbd "C-S-i") 'display-line-numbers-mode)
 
-    "Setting M-v to make a vertical split"
+    ;; Setting M-v to make a vertical split
     (define-key ali-keymap (kbd "M-v") 'evil-window-vsplit)
 
-    "Setting M-h to make a horizontal split"
+    ;; Setting M-h to make a horizontal split
     (define-key ali-keymap (kbd "M-h") 'evil-window-split)
 
-    "Setting C-s-h for help"
+    ;; Setting C-s-h for help
     (define-key ali-keymap (kbd "C-S-h") 'help)
 
-    "Shortcut to get my init.el"
+    ;; Shortcut to get my init.el
     (define-key ali-keymap (kbd "M-E") '(lambda() (interactive) (find-file "~/.emacs.d/init.el")))
 
-    "Setting C-d to kill the a buffer"
+    ;; Setting C-d to kill the a buffer
     (define-key ali-keymap (kbd "C-d") 'kill-buffer)
 
-    "Testing for running python files (probably going to add this to a hook so that it only works in python-mode"
+    ;; Testing for running python files (probably going to add this to a hook so that it only works in python-mode)
     (define-key ali-keymap (kbd "M-c") 'ali/compile-python)
 
-    "C-x C-b now launches ibuffer"
+    ;; C-x C-b now launches ibuffer
     (define-key ali-keymap (kbd "C-x C-b") 'ibuffer)
 
-    "Making a directory without using dired"
+    ;; Making a directory without using dired
     (define-key ali-keymap (kbd "M-p") 'ido-make-directory)
 
     ;; Opening eshell
     (define-key ali-keymap (kbd "C-'") 'ali/eshell)
 
-    ;; To find missing closing and opening paranthesis
-    (define-key ali-keymap (kbd "C-q o") 'ali/find-missing-open-paranthesis)
-    (define-key ali-keymap (kbd "C-q c") 'ali/find-missing-closing-paranthesis)
-
     (defvar ali-keymap ali-keymap "These are my keybindings"))
-
 
 (define-minor-mode ali-keybindings-mode
   nil
   :global t
   :lighter " keys"
   :keymap ali-keymap)
-
 
 (ali-keybindings-mode 1)
 
@@ -379,3 +365,4 @@
 (ali/ido)
 (ali/colours)
 (ali/undo-tree)
+
