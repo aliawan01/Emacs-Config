@@ -302,6 +302,7 @@
   (evil-leader/set-key
     "f" 'projectile-find-file
     "p" 'projectile-switch-project
+    "gd" 'xref-find-definitions-other-window
     "s" 'counsel-rg)
 
   ;; Compile commands for c/c++ projects
