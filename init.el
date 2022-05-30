@@ -302,7 +302,7 @@
   (evil-leader/set-key
     "f" 'projectile-find-file
     "p" 'projectile-switch-project
-    "s" 'dumb-jump-go-prompt)
+    "s" 'counsel-rg)
 
   ;; Compile commands for c/c++ projects
   (evil-leader/set-key-for-mode 'c++-mode "c" 'ali/compile-c-project)
@@ -426,3 +426,19 @@
 (ali/colours)
 (ali/undo-tree)
 (ali/dumb-jump)
+
+(define-minor-mode minor-mode-blackout-mode
+  "Hides minor modes from the mode line."
+  t)
+
+(catch 'done
+  (mapc (lambda (x)
+          (when (and (consp x)
+                     (equal (cadr x) '("" minor-mode-alist)))
+            (let ((original (copy-sequence x)))
+              (setcar x 'minor-mode-blackout-mode)
+              (setcdr x (list "" original)))
+            (throw 'done t)))
+        mode-line-modes))
+
+(minor-mode-blackout-mode 1)
