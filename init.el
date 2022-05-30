@@ -1,22 +1,23 @@
-(defvar ido-cur-item nil)
-(defvar ido-cur-list nil)
-
 (defun ali/initial-setup ()
   "Basic Settings to make emacs useable"
   (interactive)
-  (setq inhibit-startup-message t) 
   (blink-cursor-mode -1)
   (tool-bar-mode -1)
   (menu-bar-mode -1)
   (scroll-bar-mode -1)
+  (good-scroll-mode 1)
+  (set-language-environment "UTF-8")
+  (setq tags-revert-without-query 1)
+  (setq inhibit-startup-message t) 
   (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)))
   (setq mouse-wheel-progressive-speed nil)
   (setq mouse-wheel-follow-mouse 't)
-  (setq scroll-step 3)
+  (setq scroll-step 5)
   (setq scroll-margin 3)
   (setq-default indent-tabs-mode nil)
   (setq debug-on-error t)
   (setq ring-bell-function 'ignore) 
+  (setq truncate-lines nil)
   (add-hook 'prog-mode-hook 'highlight-numbers-mode)
 
   ;; Setting ESC to quit 
@@ -38,25 +39,51 @@
   (setq-default tab-width 4)
   (setq-default indent-tabs-mode nil))
 
+(defun ali/colorscheme ()
+  (interactive)
+  (let ((blue       "#2f0dc9")
+        (brown      "#8A3324")
+        (red        "#DB5B4F")
+        (green      "#008e07")
+        (purple     "#CA27B4")
+        (selection  "#dcdec3")
+        (yellow     "#ffffd7"))
+
+       (set-face-attribute 'font-lock-comment-face nil :foreground red)		
+       (set-face-attribute 'font-lock-comment-delimiter-face nil :foreground red) 
+       (set-face-attribute 'font-lock-string-face nil :foreground green)		
+       (set-face-attribute 'font-lock-doc-face nil :foreground red)		
+       (set-face-attribute 'font-lock-keyword-face nil :foreground blue)		
+       (set-face-attribute 'font-lock-builtin-face nil :foreground blue)		
+       (set-face-attribute 'font-lock-function-name-face nil :foreground "black")	
+       (set-face-attribute 'font-lock-variable-name-face nil :foreground "black")	
+       (set-face-attribute 'font-lock-type-face nil :foreground blue)		
+       (set-face-attribute 'font-lock-constant-face nil :foreground blue)		
+       (set-face-attribute 'font-lock-negation-char-face nil :foreground purple)	
+       (set-face-attribute 'font-lock-preprocessor-face nil :foreground brown)	
+       (set-face-attribute 'highlight-numbers-number nil :foreground green)
+       (set-face-attribute 'show-paren-match nil :background selection)
+       (set-face-attribute 'region nil :background selection)
+
+       (set-background-color yellow)
+       (set-face-attribute 'fringe nil :background yellow)))
+
 (defun ali/colours ()
   (interactive)
 
-  ;; Getting rid of the annoying curly arrows at the end of folded lines and making the colour of the fringes the same colour as the background
+  ;; Getting rid of the annoying curly arrows at the end of folded lines
   (setq-default fringe-indicator-alist '(continuation nil nil))
 
-  ;; Setting font
-  (set-face-attribute 'default nil :font "Consolas" :height 130)
+  ;; Setting the font
+  (set-face-attribute 'default nil :font "Fira Code Retina" :height 120)
 
-  ;; Colorscheme
-  (load-theme 'tsdh-light 1)
-
-  ;; Extra font settings
-  (set-background-color "honeydew")
-  (set-face-attribute 'fringe nil :background "honeydew")
+  ;; Colourscheme
+  (ali/colorscheme)
 
   (make-face 'font-lock-todo-face)
   (make-face 'font-lock-note-face)
 
+  ;; Highlighting TODO and NOTE
   (mapc (lambda (mode)
  	 (font-lock-add-keywords
  	  mode
@@ -133,10 +160,10 @@
 (add-hook 'eshell-mode-hook '(lambda()
                                (interactive)
                                (defalias 'clear 'clear-eshell-buffer)
-                               (define-key eshell-mode-map (kbd "C-p") 'ido-switch-buffer)
+                               (define-key eshell-mode-map (kbd "C-p") 'counsel-switch-buffer)
                                (define-key eshell-mode-map (kbd "C-6") 'evil-switch-to-windows-last-buffer)
                                (define-key eshell-mode-map (kbd "C-;") 'clear-eshell-buffer)
-                               (define-key eshell-mode-map (kbd "C-f") 'ido-find-file)
+                               (define-key eshell-mode-map (kbd "C-f") 'counsel-find-file)
                                ))
 
 (defun ali/brackets () 
@@ -170,76 +197,141 @@
 
 (use-package evil
   :ensure t)
+(use-package evil-leader
+  :ensure t)
+(use-package ivy
+  :ensure t)
+(use-package counsel 
+  :ensure t)
+(use-package ivy-posframe
+  :ensure t)
 (use-package highlight-numbers
   :ensure t)
 (use-package undo-tree
   :ensure t)
-(use-package smex
-  :ensure t)
-(use-package ido-vertical-mode
+(use-package good-scroll
  :ensure t)
+(use-package projectile
+ :ensure t)
+(use-package counsel-projectile
+  :ensure t)
+(use-package dumb-jump
+  :ensure t)
 
-(defun ali/ido () 
-  (interactive)
-  (require 'ido)
-  (setq ido-create-new-buffer 'always)
-  (ido-everywhere t)
-  (ido-mode 1)
-  (ido-vertical-mode 1))
-
-(defun ali/ido-keybindings ()
-  "Ido keybindings"
+;; Setting up dumb jump
+(defun ali/dumb-jump ()
   (interactive)
 
-  (let ((keymaps (list ido-completion-map)))
+  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
+  (setq xref-show-definitions-function #'xref-show-definitions-completing-read)
+  (setq dumb-jump-force-searcher 'rg)
+  (setq dumb-jump-quiet t)
+  (setq dumb-jump-selector 'ivy))
+
+(defun ali/ivy ()
+  (interactive)
+
+  ;; Setting up my keybindings for ivy
+  (let ((keymaps (list ivy-switch-buffer-map ivy-minibuffer-map)))
     (dolist (keymap keymaps)
-		 (define-key keymap (kbd "C-j") 'ido-next-match)
-		 (define-key keymap (kbd "C-k") 'ido-prev-match)))
+      (define-key keymap (kbd "C-j") 'ivy-next-line)
+      (define-key keymap (kbd "C-k") 'ivy-previous-line)))
 
-  (define-key ido-completion-map (kbd "M-d") 'ido-enter-dired)
-  (define-key ido-completion-map (kbd "M-f") 'ido-find-file-other-window))
+  (setq ivy-initial-inputs-alist nil)
+  (ivy-mode 1)
 
-(add-hook 'ido-setup-hook 'ali/ido-keybindings)
+  (setq ivy-posframe-parameters
+      '((left-fringe . 15)
+        (right-fringe . 15)))
+  (ivy-posframe-mode 1))
+
+
+(defun ali/compile-c-project ()
+  (interactive)
+  (let ((default-directory (projectile-project-root)))
+    (compile "build.bat")))
+
+(defun ali/run-c-project ()
+  (interactive)
+  (let ((default-directory (projectile-project-root)))
+    (compile "run.bat")))
+
+(setq projectile-completion-system 'ivy)
+(projectile-mode 1)
 
 ;; Settings for increasing and decreasing size of the image when in the `image-mode'
 (define-key image-map (kbd "C-=") 'image-increase-size)
 (define-key image-map (kbd "C--") 'image-decrease-size)
 
-(defun indent-current-line ()
+(defun indent-at-point ()
   (interactive)
-    (progn 
-        (setq regionStart (line-beginning-position))
-        (setq regionEnd (line-end-position))
+  (insert "    "))
 
-        (when (use-region-p)
-            (setq regionStart (region-beginning))
-            (setq regionEnd (region-end))
-        )
-        (save-excursion
-            (goto-char regionStart)
-            (setq start (line-beginning-position))
-            (goto-char regionEnd)
-            (setq end (line-end-position))
-            (indent-rigidly start end 4)
-            (setq deactivate-mark nil)
-            )))
+(defun counsel-etags-async-shell-command (command)
+  "Execute string COMMAND and create tags file asynchronously."
+  (let* ((proc (start-process "Shell" nil shell-file-name shell-command-switch command)))
+    (set-process-sentinel
+     proc
+     `(lambda (process signal)
+        (let* ((status (process-status process)))
+          (when (memq status '(exit signal))
+            (cond
+             ((string= (substring signal 0 -1) "finished")
+              (let* ((cmd (car (cdr (cdr (process-command process))))))
+                (message "Tags file was created.")))
+             (t
+              (message "Failed to create tags file.\nerror=%s\ncommand=%s"
+                       signal
+                       ,command)))))))))
+
+
+;; This will update the tags file in the background
+(defun update-ctags ()
+  (interactive)
+  (if (not (eq (projectile-project-root) nil))
+      (let* ((project-dir (string-replace "/" "\\" (projectile-project-root)))
+             (update-cmd (message "pushd %s&ctags -e -R&popd" project-dir)))
+      (counsel-etags-async-shell-command update-cmd))))
+
+(add-hook 'after-save-hook 'update-ctags)
+
+(defun ali/evil-leader ()
+  (interactive)
+
+  (evil-leader/set-leader "<SPC>")
+  (evil-leader/set-key
+    "f" 'projectile-find-file
+    "p" 'projectile-switch-project
+    "s" 'dumb-jump-go-prompt)
+
+  ;; Compile commands for c/c++ projects
+  (evil-leader/set-key-for-mode 'c++-mode "c" 'ali/compile-c-project)
+  (evil-leader/set-key-for-mode 'c++-mode "t" 'ali/run-c-project)
+
+  (global-evil-leader-mode))
+
 
 (defun ali/evil ()
-  "Setup for evil mode"
   (interactive)
   (require 'evil)
 
   ;; Making cursor always be a box
   (setq evil-normal-state-cursor 'box)
-  (setq evil-insert-state-cursor '(bar . 2))
+  (setq evil-insert-state-cursor 'box)
 
   (define-key evil-normal-state-map (kbd "C-b c") 'projects)
 
   ;; Making backspace launch M-x
-  (define-key evil-normal-state-map (kbd "DEL") 'smex)
+  (define-key evil-normal-state-map (kbd "M-x") 'counsel-M-x)
 
   ;; Balancing all the windows on the screen
   (define-key evil-normal-state-map (kbd "=") 'balance-windows)
+
+  ;; Setting C-d to kill the a buffer
+  (define-key evil-normal-state-map (kbd "C-d") 'kill-buffer)
+
+  ;; To jump to definition
+  (define-key evil-normal-state-map (kbd "gd") 'xref-find-definitions)
 
   ;; Swapping the windows on the screen
   (define-key evil-normal-state-map (kbd "+") 'window-swap-states)
@@ -247,20 +339,18 @@
   ;; Rebinding : to ; in normal mode
   (define-key evil-normal-state-map (kbd ";") 'evil-ex)
 
-  ;; Commands for building and running codes
-  (define-key evil-normal-state-map (kbd "C-e") 'build-compile)
-  (define-key evil-normal-state-map (kbd "C-q") 'run-compile)
-
   ;; Making TAB autocomplete
-  (define-key evil-insert-state-map [tab] 'indent-current-line)
+  (define-key evil-insert-state-map [tab] 'indent-at-point)
 
   ;; Commands to navigate through windows
   (let ((keymaps (list evil-normal-state-map evil-insert-state-map)))
+
     (dolist (keymap keymaps)
-      (define-key keymap (kbd "C-h") 'evil-window-left)
+      (define-key keymap (kbd "M-v") 'evil-window-vsplit)
+      (define-key keymap (kbd "M-h") 'evil-window-split)
+
       (define-key keymap (kbd "C-j") 'evil-window-down)
-      (define-key keymap (kbd "C-k") 'evil-window-up)
-      (define-key keymap (kbd "C-l") 'evil-window-right)))
+      (define-key keymap (kbd "C-k") 'evil-window-up)))
 
   (evil-make-overriding-map ali-keymap 'normal 'motion)
   (evil-mode 1))
@@ -270,6 +360,7 @@
   ;; Settings for undo-tree
   (with-eval-after-load 'undo-tree (defun undo-tree-overridden-undo-bindings-p () nil))
   (global-undo-tree-mode 1)
+  (setq undo-tree-auto-save-history nil)
   (evil-set-undo-system 'undo-tree)
 )
 
@@ -280,33 +371,19 @@
     ;; Automatically resizes the compilation window so that it is smaller
     (unless (not (get-buffer-window "*compilation*"))
       (save-selected-window
-        (select-window (get-buffer-window "*compilation*"))
-        (evil-window-set-width 65))))
-
-(defun projects ()
-  (interactive)
-  (switch-to-buffer (find-file-noselect "Name of folder")))
-
-(defun build-compile ()
-  (interactive)
-  (switch-to-buffer-other-window "*compilation*")
-  (compile "build.bat")
-  (other-window 1))
-
-(defun run-compile ()
-  (interactive)
-  (compile "run.bat"))
+        (select-window (get-buffer-window "*compilation*")))))
 
 ;; Making sure that tabs are used in makefiles
 (add-hook 'makefile-mode-hook '(lambda () (interactive) (setq indent-tabs-mode t)))
 
 (let ((ali-keymap (make-sparse-keymap)))
-    ;; M-d to open dired in the current directory
-    (global-set-key (kbd "M-d") '(lambda() (interactive) (execute-kbd-macro (read-kbd-macro "C-x d RET"))))
+    ;; Keybindings for moving between horizontal splits
+    (define-key ali-keymap (kbd "C-h") 'evil-window-left)
+    (define-key ali-keymap (kbd "C-l") 'evil-window-right)
 
-    ;; Keybindings for ido-mode
-    (define-key ali-keymap (kbd "C-p") 'ido-switch-buffer)
-    (define-key ali-keymap (kbd "C-f") 'ido-find-file)
+    ;; Keybindings for switching buffers and files
+    (define-key ali-keymap (kbd "C-p") 'counsel-switch-buffer)
+    (define-key ali-keymap (kbd "C-f") 'counsel-find-file)
 
     ;; Making windows bigger and smaller
     (define-key ali-keymap (kbd "M-=") 'enlarge-window-horizontally)
@@ -322,32 +399,14 @@
     ;; Making Line numbers toggable
     (define-key ali-keymap (kbd "C-S-i") 'display-line-numbers-mode)
 
-    ;; Setting M-v to make a vertical split
-    (define-key ali-keymap (kbd "M-v") 'evil-window-vsplit)
-
-    ;; Setting M-h to make a horizontal split
-    (define-key ali-keymap (kbd "M-h") 'evil-window-split)
-
     ;; Setting C-s-h for help
     (define-key ali-keymap (kbd "C-S-h") 'help)
-
-    ;; Shortcut to get my init.el
-    (define-key ali-keymap (kbd "M-E") '(lambda() (interactive) (find-file "~/.emacs.d/init.el")))
-
-    ;; Setting C-d to kill the a buffer
-    (define-key ali-keymap (kbd "C-d") 'kill-buffer)
 
     ;; Testing for running python files (probably going to add this to a hook so that it only works in python-mode)
     (define-key ali-keymap (kbd "M-c") 'ali/compile-python)
 
-    ;; C-x C-b now launches ibuffer
-    (define-key ali-keymap (kbd "C-x C-b") 'ibuffer)
-
     ;; Making a directory without using dired
     (define-key ali-keymap (kbd "M-p") 'ido-make-directory)
-
-    ;; Opening eshell
-    (define-key ali-keymap (kbd "C-'") 'ali/eshell)
 
     (defvar ali-keymap ali-keymap "These are my keybindings"))
 
@@ -357,12 +416,13 @@
   :lighter " keys"
   :keymap ali-keymap)
 
+(ali/ivy)
 (ali-keybindings-mode 1)
 
 (ali/initial-setup)
 (ali/brackets)
+(ali/evil-leader)
 (ali/evil)
-(ali/ido)
 (ali/colours)
 (ali/undo-tree)
-
+(ali/dumb-jump)
