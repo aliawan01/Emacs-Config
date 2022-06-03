@@ -75,7 +75,7 @@
   (setq-default fringe-indicator-alist '(continuation nil nil))
 
   ;; Setting the font
-  (set-face-attribute 'default nil :font "Fira Code Retina" :height 120)
+  (set-face-attribute 'default nil :font "Liberation Mono" :height 130)
 
   ;; Colourscheme
   (ali/colorscheme)
@@ -259,6 +259,8 @@
 (setq projectile-completion-system 'ivy)
 (projectile-mode 1)
 
+(add-to-list 'projectile-globally-ignored-directories '"\\.vs$")
+
 ;; Settings for increasing and decreasing size of the image when in the `image-mode'
 (define-key image-map (kbd "C-=") 'image-increase-size)
 (define-key image-map (kbd "C--") 'image-decrease-size)
@@ -311,6 +313,13 @@
 
   (global-evil-leader-mode))
 
+(defun toggle-compilation-window ()
+  "Show/Hide the window containing the '*compilation*' buffer."
+  (interactive)
+  (when-let ((buffer compilation-last-buffer))
+    (if (get-buffer-window buffer 'visible)
+        (delete-windows-on buffer)
+      (display-buffer buffer))))
 
 (defun ali/evil ()
   (interactive)
@@ -342,6 +351,10 @@
 
   ;; Making TAB autocomplete
   (define-key evil-insert-state-map [tab] 'indent-at-point)
+
+  ;; A keybinding to toggle the compilation buffer
+  (define-key evil-normal-state-map (kbd "C-,") 'toggle-compilation-window)
+
 
   ;; Commands to navigate through windows
   (let ((keymaps (list evil-normal-state-map evil-insert-state-map)))
